@@ -26,10 +26,9 @@ RUN npm install -g serve
 # Copiar archivos compilados
 COPY --from=builder /app/dist ./dist
 
-# Railway usa la variable PORT
-ENV PORT=3000
+# Railway asigna el puerto dinámicamente
 EXPOSE 3000
 
-# Servir la aplicación
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Servir la aplicación - usa shell form para expandir $PORT
+CMD serve -s dist -l ${PORT:-3000}
 
