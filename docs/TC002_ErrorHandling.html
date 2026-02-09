@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>TC002_ErrorHandling_InvalidFile</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">TC002_ErrorHandling_InvalidFile</td></tr>
+</thead>
+<tbody>
+<tr><td>open</td><td>http://localhost:5173</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.video-translator</td><td>10000</td></tr>
+<tr><td>echo</td><td>PAUSA: Suba un archivo INVALIDO (.txt o .doc)</td><td></td></tr>
+<tr><td>pause</td><td>10000</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.file-item</td><td>10000</td></tr>
+<tr><td>verifyElementPresent</td><td>css=.file-item.invalid</td><td></td></tr>
+<tr><td>verifyElementPresent</td><td>css=.translate-btn[disabled]</td><td></td></tr>
+<tr><td>captureEntirePageScreenshot</td><td>TC002_archivo_invalido.png</td><td></td></tr>
+<tr><td>click</td><td>css=.clear-btn</td><td></td></tr>
+<tr><td>waitForElementNotPresent</td><td>css=.file-item</td><td>3000</td></tr>
+<tr><td>echo</td><td>PAUSA: Ahora suba un VIDEO VALIDO (.mp4)</td><td></td></tr>
+<tr><td>pause</td><td>10000</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.file-item</td><td>10000</td></tr>
+<tr><td>click</td><td>css=.translate-btn</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.translate-btn .spinner</td><td>3000</td></tr>
+<tr><td>waitForElementNotPresent</td><td>css=.translate-btn .spinner</td><td>120000</td></tr>
+<tr><td>captureEntirePageScreenshot</td><td>TC002_resultado.png</td><td></td></tr>
+<tr><td>echo</td><td>TEST COMPLETADO: Manejo de errores verificado</td><td></td></tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>TC003_ExpertPanel_BatchEvaluate</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">TC003_ExpertPanel_BatchEvaluate</td></tr>
+</thead>
+<tbody>
+<tr><td>open</td><td>http://localhost:5173</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.mode-selector</td><td>10000</td></tr>
+<tr><td>click</td><td>xpath=//button[contains(@class,'mode-btn')]/span[contains(text(),'Sistema Experto')]/parent::button</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.expert-panel</td><td>5000</td></tr>
+<tr><td>verifyElementPresent</td><td>css=.drop-zone</td><td></td></tr>
+<tr><td>echo</td><td>PAUSA: Suba 3 archivos .pkl AHORA (arrastrelos a la zona)</td><td></td></tr>
+<tr><td>pause</td><td>20000</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.files-list .file-item</td><td>15000</td></tr>
+<tr><td>click</td><td>css=.btn-infer</td><td></td></tr>
+<tr><td>waitForElementPresent</td><td>css=.btn-infer .spinner</td><td>3000</td></tr>
+<tr><td>verifyElementPresent</td><td>css=.btn-infer[disabled]</td><td></td></tr>
+<tr><td>waitForElementNotPresent</td><td>css=.btn-infer .spinner</td><td>120000</td></tr>
+<tr><td>waitForElementPresent</td><td>css=.batch-results</td><td>5000</td></tr>
+<tr><td>verifyElementPresent</td><td>css=.batch-summary</td><td></td></tr>
+<tr><td>verifyElementPresent</td><td>css=.summary-stat</td><td></td></tr>
+<tr><td>verifyElementPresent</td><td>css=.summary-stat.accepted</td><td></td></tr>
+<tr><td>verifyElementPresent</td><td>css=.summary-stat.rejected</td><td></td></tr>
+<tr><td>verifyElementPresent</td><td>css=.batch-result-card</td><td></td></tr>
+<tr><td>captureEntirePageScreenshot</td><td>TC003_batch_results.png</td><td></td></tr>
+<tr><td>echo</td><td>TEST COMPLETADO: Batch processing exitoso</td><td></td></tr>
+</tbody>
+</table>
+</body>
+</html>
