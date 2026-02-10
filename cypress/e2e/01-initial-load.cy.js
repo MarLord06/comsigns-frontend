@@ -4,12 +4,6 @@
  * OBJETIVO:
  * Verificar que la aplicación React SPA carga correctamente sin errores,
  * mostrando el header, logo, título y los 4 botones de navegación por modo.
- * 
- * SUPOSICIONES:
- * - El título principal es "COMSIGNS"
- * - Subtítulo: "Traducción de Lengua de Señas en Tiempo Real"
- * - Hay 4 botones de modo: Traducir Video, Sistema Experto, Inferir Sample, Cámara en Vivo
- * - El modo por defecto es 'video' (Traducir Video activo)
  */
 
 describe('01 - Carga Inicial de la SPA', () => {
@@ -19,14 +13,14 @@ describe('01 - Carga Inicial de la SPA', () => {
     cy.visit('/');
   });
 
-  it('debe mostrar el header con logo y título', () => {
+  it('debe mostrar el header con logo y titulo', () => {
     // Verificar logo emoji
     cy.get('.logo-icon').should('contain', '🤟');
     
     // Verificar título principal
     cy.contains('h1', 'COMSIGNS').should('be.visible');
     
-    // Verificar subtítulo
+    // Verificar subtitulo
     cy.contains('Traducción de Lengua de Señas en Tiempo Real').should('be.visible');
   });
 
