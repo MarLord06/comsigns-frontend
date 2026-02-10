@@ -115,18 +115,38 @@ function CameraCapture({ onPrediction, onError }) {
         HandsModule, CameraModule, DrawingModule
       })
 
-      // Resolver constructor de Hands robustamente (varias formas de export)
-      let HandsCtor = null
-      if (typeof HandsModule?.Hands === 'function') {
-        HandsCtor = HandsModule.Hands
-      } else if (typeof HandsModule?.default?.Hands === 'function') {
-        HandsCtor = HandsModule.default.Hands
-      } else if (typeof HandsModule?.default === 'function') {
-        HandsCtor = HandsModule.default
-      } else if (typeof HandsModule === 'function') {
-        HandsCtor = HandsModule
-      } else if (HandsModule && typeof HandsModule === 'object' && typeof HandsModule.Hands === 'function') {
-        HandsCtor = HandsModule.Hands
+      // Resolver constructor de Hands robustamente (buscar en default/nested exports)
+      const deepFindCtor = (mod) => {
+        if (!mod) return null
+        if (typeof mod === 'function') return mod
+        if (typeof mod === 'object') {
+          if (typeof mod.Hands === 'function') return mod.Hands
+          if (typeof mod.default === 'function') return mod.default
+          if (mod.default && typeof mod.default === 'object') {
+            if (typeof mod.default.Hands === 'function') return mod.default.Hands
+            if (typeof mod.default.default === 'function') return mod.default.default
+          }
+          // Buscar recursivamente en propiedades
+          for (const k of Object.keys(mod)) {
+            try {
+              const v = mod[k]
+              if (typeof v === 'function') return v
+              if (v && typeof v === 'object') {
+                const nested = deepFindCtor(v)
+                if (nested) return nested
+              }
+            } catch (e) {
+              // ignore access errors
+            }
+          }
+        }
+        return null
+      }
+
+      const HandsCtor = deepFindCtor(HandsModule)
+      console.log('[Debug] deep HandsModule keys:', HandsModule && Object.keys(HandsModule))
+      if (HandsModule?.default && typeof HandsModule.default === 'object') {
+        console.log('[Debug] HandsModule.default keys:', Object.keys(HandsModule.default))
       }
 
       // Resolver Camera y drawing utils con fallback razonable
