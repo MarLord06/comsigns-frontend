@@ -97,12 +97,32 @@ function CameraCapture({ onPrediction, onError }) {
    */
   const initializeHands = useCallback(async () => {
     try {
+      // Avoid running during SSR/build (Vercel) — only run in browser
+      if (typeof window === 'undefined') {
+        console.warn('initializeHands skipped: no window (SSR)')
+        return
+      }
+
       console.log('🎯 Inicializando MediaPipe Hands...')
 
       // Importar dinámicamente para mejor manejo de errores
-      const { Hands } = await import('@mediapipe/hands')
-      const { Camera } = await import('@mediapipe/camera_utils')
-      const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = await import('@mediapipe/drawing_utils')
+      const HandsModule = await import('@mediapipe/hands')
+      const CameraModule = await import('@mediapipe/camera_utils')
+      const DrawingModule = await import('@mediapipe/drawing_utils')
+
+      // Resolve named/default exports robustly to avoid bundler differences
+      const Hands = HandsModule?.Hands || HandsModule?.default || HandsModule
+      const Camera = CameraModule?.Camera || CameraModule?.default || CameraModule
+      const drawConnectors = DrawingModule?.drawConnectors || DrawingModule?.default?.drawConnectors
+      const drawLandmarks = DrawingModule?.drawLandmarks || DrawingModule?.default?.drawLandmarks
+      const HAND_CONNECTIONS = DrawingModule?.HAND_CONNECTIONS || DrawingModule?.default?.HAND_CONNECTIONS
+
+      if (typeof Hands !== 'function') {
+        throw new Error('MediaPipe Hands constructor not available after import')
+      }
+      if (!Camera) {
+        throw new Error('MediaPipe Camera not available after import')
+      }
 
       // Crear instancia de Hands
       const hands = new Hands({
@@ -198,14 +218,15 @@ function CameraCapture({ onPrediction, onError }) {
       // Log para confirmar asignación y callback
       console.log('[Log] handsRef.current asignado:', !!handsRef.current);
       console.log('[Log] handsRef.current.onResults asignado:', !!handsRef.current.onResults);
-      setDrawingUtils({ drawConnectors, drawLandmarks, HAND_CONNECTIONS });
+      setDrawingUtils({ drawConnectors, drawLandmarks, HAND_CONNECTIONS })
       setHandsReady(true);
       console.log('✅ MediaPipe Hands inicializado correctamente');
     } catch (err) {
-      const errorMsg = 'Error inicializando MediaPipe Hands: ' + (err.message || err);
-      console.error('[Error] MediaPipe Hands:', err);
-      setError(errorMsg);
-      if (onError) onError(errorMsg);
+      const msg = err?.message || String(err)
+      const errorMsg = 'Error inicializando MediaPipe Hands: ' + msg
+      console.error('[Error] MediaPipe Hands:', err)
+      setError(errorMsg)
+      if (onError) onError(errorMsg)
     }
   }, [onError])
 
