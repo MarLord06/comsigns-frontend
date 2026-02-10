@@ -1,4 +1,5 @@
 import React from 'react'
+import { speak } from '../utils/tts'
 import './PredictionResult.css'
 
 /**
@@ -33,6 +34,7 @@ function PredictionResult({ result }) {
         <div className="top1-card">
           <div className="gloss-display">
             <span className="gloss-text">{top1.gloss}</span>
+            <button className="tts-btn" title="Escuchar" onClick={() => speak(top1.gloss)} style={{ marginLeft: 8 }}>🔊</button>
             {top1.is_other && (
               <span className="other-badge">⚠️ OTHER</span>
             )}
@@ -69,6 +71,7 @@ function PredictionResult({ result }) {
               <span className="topk-rank">#{pred.rank}</span>
               <span className="topk-gloss">
                 {pred.gloss}
+                <button className="tts-mini-btn" title="Escuchar" onClick={() => speak(pred.gloss)} style={{ marginLeft: 6 }}>🔊</button>
                 {pred.is_other && <span className="other-mini">⚠️</span>}
               </span>
               <div className="topk-confidence-container">

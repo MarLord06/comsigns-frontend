@@ -1,4 +1,5 @@
 import React from 'react';
+import { speak } from '../utils/tts'
 import './VideoPredictionResults.css';
 
 /**
@@ -77,9 +78,16 @@ function VideoPredictionResults({ results, errors = [] }) {
             {/* Main Prediction */}
             <div className="prediction-main">
               <div className="gloss-display">
-                <span className="gloss-label">Palabra reconocida:</span>
-                <span className="gloss-value">{result.gloss}</span>
-              </div>
+                  <span className="gloss-label">Palabra reconocida:</span>
+                  <span className="gloss-value">{result.gloss}</span>
+                  <button
+                    className="tts-btn"
+                    title="Escuchar palabra"
+                    onClick={() => speak(result.gloss)}
+                  >
+                    🔊
+                  </button>
+                </div>
               
               <div className="class-info">
                 <span className="class-name">{result.class_name}</span>
@@ -139,12 +147,19 @@ function VideoPredictionResults({ results, errors = [] }) {
       {acceptedCount > 0 && (
         <div className="words-summary">
           <h4>Palabras reconocidas:</h4>
-          <div className="words-list">
+            <div className="words-list">
             {results
               ?.filter(r => r.accepted)
               .map((r, i) => (
                 <span key={i} className="word-chip">
                   {r.gloss}
+                  <button
+                    className="tts-chip-btn"
+                    title="Escuchar"
+                    onClick={() => speak(r.gloss)}
+                  >
+                    🔊
+                  </button>
                 </span>
               ))}
           </div>

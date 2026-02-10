@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import { speak } from '../utils/tts'
 import { API_BASE_URL } from '../api/config'
 import './ExpertPanel.css'
 
@@ -368,7 +369,15 @@ function ExpertPanel() {
                     </span>
                   </div>
                   <div className="result-card-body">
-                    <div className="result-gloss">{item.prediction.gloss}</div>
+                        <div className="result-gloss">
+                          {item.prediction.gloss}
+                          <button
+                            className="tts-btn"
+                            title="Escuchar palabra"
+                            onClick={() => speak(item.prediction.gloss)}
+                            style={{ marginLeft: 8 }}
+                          >🔊</button>
+                        </div>
                     <div className="result-meta">
                       <span className="result-confidence">
                         {formatConfidence(item.prediction.confidence)}
@@ -412,7 +421,13 @@ function ExpertPanel() {
             <div className="prediction-main">
               <div className="gloss-display">
                 <span className="gloss-label">Gloss Predicho</span>
-                <span className="gloss-value">{currentPrediction.gloss}</span>
+                  <span className="gloss-value">{currentPrediction.gloss}</span>
+                  <button
+                    className="tts-btn"
+                    title="Escuchar gloss"
+                    onClick={() => speak(currentPrediction.gloss)}
+                    style={{ marginLeft: 8 }}
+                  >🔊</button>
               </div>
 
               {/* Confidence Bar */}
@@ -444,6 +459,12 @@ function ExpertPanel() {
             <div className="reason-section">
               <span className="reason-label">Razón</span>
               <p className="reason-text">{currentPrediction.reason}</p>
+              <button
+                className="tts-btn reason-tts"
+                title="Leer razón"
+                onClick={() => speak(currentPrediction.reason)}
+                style={{ marginTop: 8 }}
+              >🔊 Leer razón</button>
             </div>
 
             {/* Rule Applied */}
@@ -474,6 +495,12 @@ function ExpertPanel() {
             <span className="stat-badge">
               {sequence?.length || 0} palabras
             </span>
+            <button
+              className="btn btn-small btn-tts-sequence"
+              onClick={() => speak(sequence?.glosses?.join(' → ') || '')}
+              title="Leer secuencia aceptada"
+              style={{ marginLeft: 8 }}
+            >🔊 Leer secuencia</button>
           </div>
         </div>
 
