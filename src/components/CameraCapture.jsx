@@ -110,22 +110,46 @@ function CameraCapture({ onPrediction, onError }) {
       const CameraModule = await import('@mediapipe/camera_utils')
       const DrawingModule = await import('@mediapipe/drawing_utils')
 
-      // Resolve named/default exports robustly to avoid bundler differences
-      const Hands = HandsModule?.Hands || HandsModule?.default || HandsModule
-      const Camera = CameraModule?.Camera || CameraModule?.default || CameraModule
+      // Debug: registrar la forma de los módulos importados (ayuda con bundlers/SSR)
+      console.log('[Debug] Módulos MediaPipe importados:', {
+        HandsModule, CameraModule, DrawingModule
+      })
+
+      // Resolver constructor de Hands robustamente (varias formas de export)
+      let HandsCtor = null
+      if (typeof HandsModule?.Hands === 'function') {
+        HandsCtor = HandsModule.Hands
+      } else if (typeof HandsModule?.default?.Hands === 'function') {
+        HandsCtor = HandsModule.default.Hands
+      } else if (typeof HandsModule?.default === 'function') {
+        HandsCtor = HandsModule.default
+      } else if (typeof HandsModule === 'function') {
+        HandsCtor = HandsModule
+      } else if (HandsModule && typeof HandsModule === 'object' && typeof HandsModule.Hands === 'function') {
+        HandsCtor = HandsModule.Hands
+      }
+
+      // Resolver Camera y drawing utils con fallback razonable
+      const Camera = CameraModule?.Camera || CameraModule?.default?.Camera || CameraModule?.default || CameraModule
       const drawConnectors = DrawingModule?.drawConnectors || DrawingModule?.default?.drawConnectors
       const drawLandmarks = DrawingModule?.drawLandmarks || DrawingModule?.default?.drawLandmarks
       const HAND_CONNECTIONS = DrawingModule?.HAND_CONNECTIONS || DrawingModule?.default?.HAND_CONNECTIONS
 
-      if (typeof Hands !== 'function') {
-        throw new Error('MediaPipe Hands constructor not available after import')
+      if (!HandsCtor) {
+        const shape = HandsModule && typeof HandsModule === 'object' ? Object.keys(HandsModule) : String(HandsModule)
+        throw new Error('MediaPipe Hands constructor not available after import. Module keys: ' + JSON.stringify(shape))
       }
+
+      console.log('[Debug] Hands constructor resuelto:', !!HandsCtor, HandsCtor && HandsCtor.name)
+
+      // Validar Camera (resolver formas de exportación)
       if (!Camera) {
-        throw new Error('MediaPipe Camera not available after import')
+        const cameraKeys = CameraModule && typeof CameraModule === 'object' ? Object.keys(CameraModule) : String(CameraModule)
+        throw new Error('MediaPipe Camera not available after import. CameraModule keys: ' + JSON.stringify(cameraKeys))
       }
 
       // Crear instancia de Hands
-      const hands = new Hands({
+      const hands = new HandsCtor({
         locateFile: HANDS_CONFIG.locateFile
       })
 
