@@ -713,98 +713,83 @@ function CameraCapture({ onPrediction, onError }) {
         console.log('[Debug] CameraClass resolved for startCamera:', !!CameraClass)
         // Log para depuración de videoRef
         console.log('[Log] videoRef.current:', videoRef.current);
-        if (!videoRef.current) {
-          console.error('[Error] videoRef.current no está disponible para MediaPipe Camera');
-          return;
-        }
-        const cameraInstance = new CameraClass(
-          videoRef.current,
-          {
-            onFrame: async () => {
-              console.log('[Log] MediaPipe Camera onFrame ejecutado');
-              // Prevent concurrent sends
-              if (processingLockRef.current) {
-                return
-              }
 
-              // Check video readiness before sending to MediaPipe Hands
-              if (
-                videoRef.current &&
-                handsRef.current &&
-                videoRef.current.readyState >= 3 && // HAVE_FUTURE_DATA / HAVE_ENOUGH_DATA
-                !videoRef.current.paused &&
-                !videoRef.current.ended
-              ) {
-                processingLockRef.current = true
-                try {
-                  setIsProcessingHands(true)
-                  console.log('[Log] Enviando frame a MediaPipe Hands...')
-
-                  // Prefer ImageBitmap for stability/performance
-                  if (window.createImageBitmap) {
-                    const bitmap = await createImageBitmap(videoRef.current)
-                    try {
-                      if (typeof handsRef.current.send === 'function') {
-                        await handsRef.current.send({ image: bitmap })
-                        console.log('[Log] Frame (ImageBitmap) enviado a MediaPipe Hands.')
-                      } else {
-                        console.error('[Error] handsRef.current.send no es función:', handsRef.current)
-                      }
-                    } finally {
-                      try { bitmap.close() } catch (e) { /* ignore */ }
-                    }
-                  } else {
-                    // Fallback to video element
-                    if (typeof handsRef.current.send === 'function') {
-                      await handsRef.current.send({ image: videoRef.current })
-                      console.log('[Log] Frame (video element) enviado a MediaPipe Hands.')
-                    } else {
-                      console.error('[Error] handsRef.current.send no es función:', handsRef.current)
-                    }
-                  }
-                } catch (err) {
-                  console.error('❌ Error enviando frame a MediaPipe:', err)
-
-                  // If WASM runtime abort detected, attempt graceful reinit
-                  const msg = (err && err.message) || ''
-                  if (msg.includes('Module.arguments has been replaced') || msg.includes('abort')) {
-                    console.error('[Error] WASM abort detectado — reiniciando MediaPipe Hands')
-                    try {
-                      if (handsRef.current) {
-                        try { handsRef.current.close() } catch (e) { /* ignore */ }
-                        handsRef.current = null
-                      }
-                    } catch (closeErr) {
-                      console.error('[Error] cerrando hands después del abort:', closeErr)
-                    }
-
-                    setHandsReady(false)
-                    // Reinitialize after short delay
-                    setTimeout(() => {
-                      initializeHands().catch(e => console.error('❌ Error re-inicializando Hands:', e))
-                    }, 500)
-                  }
-                } finally {
-                  processingLockRef.current = false
-                  setIsProcessingHands(false)
-                }
-              } else {
-                console.log('[Log] No se envía frame: videoRef, handsRef o video no listo.', {
-                  videoRef: !!videoRef.current,
-                  handsRef: !!handsRef.current,
-                  readyState: videoRef.current?.readyState,
-                  paused: videoRef.current?.paused,
-                  ended: videoRef.current?.ended
-                })
-              }
-            },
-            width: APP_CONFIG.FRAME_WIDTH,
-            height: APP_CONFIG.FRAME_HEIGHT
+        if (CameraClass && typeof CameraClass === 'function') {
+          if (!videoRef.current) {
+            console.error('[Error] videoRef.current no está disponible para MediaPipe Camera');
+            return;
           }
-        );
-        cameraInstance.start();
-        cameraRef.current = cameraInstance; // Guardar referencia
-        console.log('✅ Cámara MediaPipe iniciada');
+          const cameraInstance = new CameraClass(
+            videoRef.current,
+            {
+              onFrame: async () => {
+                console.log('[Log] MediaPipe Camera onFrame ejecutado');
+                if (processingLockRef.current) return
+                if (videoRef.current && handsRef.current && videoRef.current.readyState >= 3 && !videoRef.current.paused && !videoRef.current.ended) {
+                  processingLockRef.current = true
+                  try {
+                    setIsProcessingHands(true)
+                    console.log('[Log] Enviando frame a MediaPipe Hands...')
+                    if (window.createImageBitmap) {
+                      const bitmap = await createImageBitmap(videoRef.current)
+                      try { if (typeof handsRef.current.send === 'function') { await handsRef.current.send({ image: bitmap }) } else { console.error('[Error] handsRef.current.send no es función:', handsRef.current) } } finally { try { bitmap.close() } catch (e) { } }
+                    } else {
+                      if (typeof handsRef.current.send === 'function') { await handsRef.current.send({ image: videoRef.current }) } else { console.error('[Error] handsRef.current.send no es función:', handsRef.current) }
+                    }
+                  } catch (err) {
+                    console.error('❌ Error enviando frame a MediaPipe:', err)
+                    const msg = (err && err.message) || ''
+                    if (msg.includes('Module.arguments has been replaced') || msg.includes('abort')) {
+                      console.error('[Error] WASM abort detectado — reiniciando MediaPipe Hands')
+                      try { if (handsRef.current) { try { handsRef.current.close() } catch (e) { } handsRef.current = null } } catch (closeErr) { console.error('[Error] cerrando hands después del abort:', closeErr) }
+                      setHandsReady(false)
+                      setTimeout(() => { initializeHands().catch(e => console.error('❌ Error re-inicializando Hands:', e)) }, 500)
+                    }
+                  } finally { processingLockRef.current = false; setIsProcessingHands(false) }
+                } else {
+                  console.log('[Log] No se envía frame: videoRef, handsRef o video no listo.', { videoRef: !!videoRef.current, handsRef: !!handsRef.current, readyState: videoRef.current?.readyState, paused: videoRef.current?.paused, ended: videoRef.current?.ended })
+                }
+              },
+              width: APP_CONFIG.FRAME_WIDTH,
+              height: APP_CONFIG.FRAME_HEIGHT
+            }
+          );
+          cameraInstance.start();
+          cameraRef.current = cameraInstance; // Guardar referencia
+          console.log('✅ Cámara MediaPipe iniciada');
+        } else {
+          console.warn('[Warn] CameraClass no es constructor — usando RAF loop como fallback')
+
+          const processFrame = async () => {
+            if (processingLockRef.current) { cameraLoopRef.current = requestAnimationFrame(processFrame); return }
+            if (videoRef.current && handsRef.current && videoRef.current.readyState >= 3 && !videoRef.current.paused && !videoRef.current.ended) {
+              processingLockRef.current = true
+              try {
+                setIsProcessingHands(true)
+                console.log('[Log] RAF: Enviando frame a MediaPipe Hands...')
+                if (window.createImageBitmap) {
+                  const bitmap = await createImageBitmap(videoRef.current)
+                  try { if (typeof handsRef.current.send === 'function') { await handsRef.current.send({ image: bitmap }); console.log('[Log] RAF: Frame (ImageBitmap) enviado a MediaPipe Hands.') } else { console.error('[Error] handsRef.current.send no es función (RAF):', handsRef.current) } } finally { try { bitmap.close() } catch (e) { } }
+                } else {
+                  if (typeof handsRef.current.send === 'function') { await handsRef.current.send({ image: videoRef.current }); console.log('[Log] RAF: Frame (video element) enviado a MediaPipe Hands.') } else { console.error('[Error] handsRef.current.send no es función (RAF):', handsRef.current) }
+                }
+              } catch (err) {
+                console.error('❌ RAF Error enviando frame a MediaPipe:', err)
+                const msg = (err && err.message) || ''
+                if (msg.includes('Module.arguments has been replaced') || msg.includes('abort')) {
+                  console.error('[Error] WASM abort detectado en RAF — reiniciando MediaPipe Hands')
+                  try { if (handsRef.current) { try { handsRef.current.close() } catch {} handsRef.current = null } } catch(e) { console.error('[Error] cerrando hands después del abort (RAF):', e) }
+                  setHandsReady(false)
+                  setTimeout(() => { initializeHands().catch(e => console.error('❌ Error re-inicializando Hands (RAF):', e)) }, 500)
+                }
+              } finally { processingLockRef.current = false; setIsProcessingHands(false) }
+            }
+            cameraLoopRef.current = requestAnimationFrame(processFrame)
+          }
+
+          cameraLoopRef.current = requestAnimationFrame(processFrame)
+          console.log('✅ RAF loop iniciado como fallback para procesamiento de frames')
+        }
       } else {
         console.warn('⚠️ MediaPipe no está listo para iniciar cámara:', {
           handsReady,
