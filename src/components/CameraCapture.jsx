@@ -67,6 +67,7 @@ function CameraCapture({ onPrediction, onError }) {
   const canvasRef = useRef(null)
   const handsRef = useRef(null)
   const cameraRef = useRef(null)
+  const cameraLoopRef = useRef(null)
   const handsCtorRef = useRef(null)
   const cameraCtorRef = useRef(null)
   const wsRef = useRef(null)
@@ -838,6 +839,17 @@ function CameraCapture({ onPrediction, onError }) {
       clearInterval(captureIntervalRef.current)
       captureIntervalRef.current = null
       console.log('✅ Intervalo de captura detenido')
+    }
+
+    // Detener RAF fallback loop si existe
+    if (cameraLoopRef.current) {
+      try {
+        cancelAnimationFrame(cameraLoopRef.current)
+        console.log('✅ RAF loop detenido')
+      } catch (err) {
+        console.warn('⚠️ Error al cancelar RAF loop:', err)
+      }
+      cameraLoopRef.current = null
     }
 
     // Limpiar timeout de procesamiento
