@@ -189,10 +189,11 @@ function CameraCapture({ onPrediction, onError }) {
       if (!resolvedHandsCtor) {
         console.warn('[Warn] Hands constructor no encontrado por import dinámico — intentando CDN fallback')
         try {
-          // Cargar UMD builds desde jsdeliver
-          await loadScript(HANDS_CONFIG.locateFile('hands.js'))
-          await loadScript(HANDS_CONFIG.locateFile('camera_utils.js'))
-          await loadScript(HANDS_CONFIG.locateFile('drawing_utils.js'))
+          // Cargar UMD builds desde sus propios paquetes CDN
+          const jsDelivr = 'https://cdn.jsdelivr.net/npm/'
+          await loadScript(jsDelivr + '@mediapipe/hands/hands.js')
+          await loadScript(jsDelivr + '@mediapipe/camera_utils/camera_utils.js')
+          await loadScript(jsDelivr + '@mediapipe/drawing_utils/drawing_utils.js')
 
           console.log('[Debug] Scripts CDN cargados, verificando globals...')
           resolvedHandsCtor = tryResolveFromGlobals()
