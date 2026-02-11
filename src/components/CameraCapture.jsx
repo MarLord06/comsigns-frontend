@@ -67,6 +67,8 @@ function CameraCapture({ onPrediction, onError }) {
   const canvasRef = useRef(null)
   const handsRef = useRef(null)
   const cameraRef = useRef(null)
+  const handsCtorRef = useRef(null)
+  const cameraCtorRef = useRef(null)
   const wsRef = useRef(null)
   const streamRef = useRef(null)
   const processingLockRef = useRef(false)
@@ -252,6 +254,10 @@ function CameraCapture({ onPrediction, onError }) {
 
       console.log('[Debug] Hands constructor resuelto:', !!FinalHandsCtor, FinalHandsCtor && FinalHandsCtor.name)
       console.log('[Debug] Camera constructor resuelto:', !!FinalCameraCtor, FinalCameraCtor && FinalCameraCtor.name)
+
+      // Guardar los constructores resueltos en refs para usarlos desde otras funciones
+      handsCtorRef.current = FinalHandsCtor
+      cameraCtorRef.current = FinalCameraCtor
 
       // Crear instancia de Hands
       const hands = new FinalHandsCtor({
@@ -692,7 +698,9 @@ function CameraCapture({ onPrediction, onError }) {
       // Iniciar MediaPipe Camera si Hands está listo
       if (handsReady && handsRef.current && drawingUtils) {
         console.log('📹 Iniciando MediaPipe Camera...')
-        const CameraClass = cameraRef.current || (await import('@mediapipe/camera_utils')).Camera
+        const importedCamera = await import('@mediapipe/camera_utils').catch(() => null)
+        const CameraClass = cameraRef.current || cameraCtorRef.current || importedCamera?.Camera || importedCamera?.default?.Camera || importedCamera?.default || null
+        console.log('[Debug] CameraClass resolved for startCamera:', !!CameraClass)
         // Log para depuración de videoRef
         console.log('[Log] videoRef.current:', videoRef.current);
         if (!videoRef.current) {
