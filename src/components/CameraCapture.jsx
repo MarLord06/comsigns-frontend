@@ -149,18 +149,74 @@ function CameraCapture({ onPrediction, onError }) {
         console.log('[Debug] HandsModule.default keys:', Object.keys(HandsModule.default))
       }
 
+      // Si no conseguimos el constructor por import dinámico, intentar cargar desde CDN (fallback para entornos como Vercel)
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        try {
+          const s = document.createElement('script')
+          s.src = src
+          s.async = true
+          s.onload = () => resolve()
+          s.onerror = (e) => reject(new Error('Error cargando script ' + src))
+          document.head.appendChild(s)
+        } catch (e) {
+          reject(e)
+        }
+      })
+
+      const tryResolveFromGlobals = () => {
+        const candidates = [
+          window?.Hands,
+          window?.hands,
+          window?.Mediapipe,
+          window?.mediapipe,
+          window?.MPHands,
+          window?.mpHands
+        ]
+        for (const c of candidates) {
+          if (!c) continue
+          if (typeof c === 'function') return c
+          if (typeof c.Hands === 'function') return c.Hands
+          if (typeof c.default === 'function') return c.default
+          if (c.default && typeof c.default.Hands === 'function') return c.default.Hands
+        }
+        // try top-level globals
+        if (typeof window?.Hands === 'function') return window.Hands
+        if (typeof window?.Camera === 'function') return window.Camera
+        return null
+      }
+
+      let resolvedHandsCtor = HandsCtor
+      if (!resolvedHandsCtor) {
+        console.warn('[Warn] Hands constructor no encontrado por import dinámico — intentando CDN fallback')
+        try {
+          // Cargar UMD builds desde jsdeliver
+          await loadScript(HANDS_CONFIG.locateFile('hands.js'))
+          await loadScript(HANDS_CONFIG.locateFile('camera_utils.js'))
+          await loadScript(HANDS_CONFIG.locateFile('drawing_utils.js'))
+
+          console.log('[Debug] Scripts CDN cargados, verificando globals...')
+          resolvedHandsCtor = tryResolveFromGlobals()
+          console.log('[Debug] resolvedHandsCtor desde globals:', !!resolvedHandsCtor, resolvedHandsCtor && resolvedHandsCtor.name)
+        } catch (cdnErr) {
+          console.error('[Error] Error cargando MediaPipe desde CDN:', cdnErr)
+        }
+      }
+
+      // Asignar finalmente el constructor que vayamos a usar
+      const FinalHandsCtor = resolvedHandsCtor || HandsCtor
+
       // Resolver Camera y drawing utils con fallback razonable
       const Camera = CameraModule?.Camera || CameraModule?.default?.Camera || CameraModule?.default || CameraModule
       const drawConnectors = DrawingModule?.drawConnectors || DrawingModule?.default?.drawConnectors
       const drawLandmarks = DrawingModule?.drawLandmarks || DrawingModule?.default?.drawLandmarks
       const HAND_CONNECTIONS = DrawingModule?.HAND_CONNECTIONS || DrawingModule?.default?.HAND_CONNECTIONS
 
-      if (!HandsCtor) {
+      if (!FinalHandsCtor) {
         const shape = HandsModule && typeof HandsModule === 'object' ? Object.keys(HandsModule) : String(HandsModule)
-        throw new Error('MediaPipe Hands constructor not available after import. Module keys: ' + JSON.stringify(shape))
+        throw new Error('MediaPipe Hands constructor not available after import or CDN fallback. Module keys: ' + JSON.stringify(shape) + '. Revisa consola para globals disponibles.')
       }
 
-      console.log('[Debug] Hands constructor resuelto:', !!HandsCtor, HandsCtor && HandsCtor.name)
+      console.log('[Debug] Hands constructor resuelto:', !!FinalHandsCtor, FinalHandsCtor && FinalHandsCtor.name)
 
       // Validar Camera (resolver formas de exportación)
       if (!Camera) {
@@ -169,7 +225,7 @@ function CameraCapture({ onPrediction, onError }) {
       }
 
       // Crear instancia de Hands
-      const hands = new HandsCtor({
+      const hands = new FinalHandsCtor({
         locateFile: HANDS_CONFIG.locateFile
       })
 
