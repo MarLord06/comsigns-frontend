@@ -179,9 +179,9 @@ function CameraCapture({ onPrediction, onError }) {
         for (const c of candidates) {
           if (!c) continue
           if (typeof c === 'function') return c
-          if (typeof c.Hands === 'function') return c.Hands
-          if (typeof c.default === 'function') return c.default
-          if (c.default && typeof c.default.Hands === 'function') return c.default.Hands
+          // Try to find a constructor inside the object (handles minified/UMD namespaces)
+          const nested = deepFindCtor(c)
+          if (nested) return nested
         }
         if (typeof window?.Hands === 'function') return window.Hands
         return null
@@ -200,9 +200,9 @@ function CameraCapture({ onPrediction, onError }) {
         for (const c of candidates) {
           if (!c) continue
           if (typeof c === 'function') return c
-          if (typeof c.Camera === 'function') return c.Camera
-          if (typeof c.default === 'function') return c.default
-          if (c.default && typeof c.default.Camera === 'function') return c.default.Camera
+          // Try deep resolution inside object
+          const nested = deepFindCtor(c)
+          if (nested) return nested
         }
         if (typeof window?.Camera === 'function') return window.Camera
         return null
@@ -227,7 +227,17 @@ function CameraCapture({ onPrediction, onError }) {
           }
           if (!resolvedCameraCtor) {
             resolvedCameraCtor = tryResolveCameraFromGlobals()
-            console.log('[Debug] resolvedCameraCtor desde globals:', !!resolvedCameraCtor, resolvedCameraCtor && resolvedCameraCtor.name)
+            console.log('[Debug] resolvedCameraCtor desde globals (raw):', resolvedCameraCtor)
+            if (resolvedCameraCtor && typeof resolvedCameraCtor !== 'function') {
+              // attempt deep find inside the resolved object
+              const nestedCam = deepFindCtor(resolvedCameraCtor)
+              if (nestedCam) {
+                resolvedCameraCtor = nestedCam
+                console.log('[Debug] resolvedCameraCtor desde globals (nested):', !!resolvedCameraCtor, resolvedCameraCtor && resolvedCameraCtor.name)
+              }
+            } else {
+              console.log('[Debug] resolvedCameraCtor desde globals:', !!resolvedCameraCtor, resolvedCameraCtor && resolvedCameraCtor.name)
+            }
           }
         } catch (cdnErr) {
           console.error('[Error] Error cargando MediaPipe desde CDN:', cdnErr)
